@@ -41,6 +41,11 @@ class TaskFilterRequest(BaseModel):
     per_page: int = 10
 
 
+class TaskInvokeRequest(BaseModel):
+    args: List[Any] = []
+    kwargs: Dict[str, Any] = {}
+
+
 @tasks_router.get("/registered-tasks")
 async def registered_tasks(request: Request) -> List[Task]:
     workers_details = request.app.state.celery_inspect.registered_tasks()
@@ -51,6 +56,11 @@ async def registered_tasks(request: Request) -> List[Task]:
             resp.append(Task(name=task, worker=worker))
 
     return resp
+
+
+@tasks_router.get("/filter")
+async def filter_tasks() -> TaskFilterRequest:
+    return TaskFilterRequest()
 
 
 @tasks_router.get("/")
@@ -108,7 +118,9 @@ async def tasks(request: Request) -> TaskInfoResponse:
 async def get_task(request: Request, task_id: str) -> TaskInfo:
     try:
         with Session(request.app.state.db_engine) as session:
-            task_info = session.exec(select(TaskInfo).where(TaskInfo.id == task_id)).first()
+            task_info = session.exec(
+                select(TaskInfo).where(TaskInfo.id == task_id)
+            ).first()
             logger.debug("Task info: %s", task_info)
             if not task_info:
                 raise HTTPException(status_code=404, detail="Task not found")
@@ -118,6 +130,16 @@ async def get_task(request: Request, task_id: str) -> TaskInfo:
         logger.error(f"Error fetching task: {e}", exc_info=True)
         return HTTPException(status_code=500, detail="Internal server error")
 
-@tasks_router.get("/filter")
-async def filter_tasks(request: Request) -> TaskFilterRequest:
-    return TaskFilterRequest()
+
+@tasks_router.post("/invoke/{task_name}")
+async def invoke_task(task_name: str, body: TaskInvokeRequest, request: Request):
+    try:
+        celery_app = request.app.state.celery_app
+        logger.debug("Invoking task: %s", task_name)
+        logger.debug("Task body: %s", body)
+        result = celery_app.send_task(task_name, args=body.args, kwargs=body.kwargs)
+        logger.debug("Task result: %s", result)
+        return {"task_id": result.task_id}
+    except Exception as e:
+        logger.error(f"Error invoking task: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
