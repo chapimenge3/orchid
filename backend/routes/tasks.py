@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlmodel import select, Session, func
 
@@ -55,50 +55,68 @@ async def registered_tasks(request: Request) -> List[Task]:
 
 @tasks_router.get("/")
 async def tasks(request: Request) -> TaskInfoResponse:
-    # workers_details = request.app.state.celery_inspect.registered_tasks()
-    status = request.query_params.get("status")
-    sort_by = request.query_params.get("sort_by", "created_at")
-    sort_order = request.query_params.get("sort_order", "desc")
-    page = int(request.query_params.get("page", 1))
-    per_page = int(request.query_params.get("per_page", 10))
-
     try:
-        sort_by = getattr(TaskInfo, sort_by)
-        if sort_order == "desc":
-            sort_by = -sort_by
-    except AttributeError:
-        sort_by = -TaskInfo.created_at
+        # workers_details = request.app.state.celery_inspect.registered_tasks()
+        status = request.query_params.get("status")
+        sort_by = request.query_params.get("sort_by", "created_at")
+        sort_order = request.query_params.get("sort_order", "desc")
+        page = int(request.query_params.get("page", 1))
+        per_page = int(request.query_params.get("per_page", 10))
 
-    logger.debug("Workers details: %s", status)
-    logger.debug("Request query params: %s", request.query_params)
+        try:
+            sort_by = getattr(TaskInfo, sort_by)
+            if sort_order == "desc":
+                sort_by = -sort_by
+        except AttributeError:
+            sort_by = -TaskInfo.created_at
 
-    if isinstance(status, str):
-        status = [status.upper()]
+        logger.debug("Workers details: %s", status)
+        logger.debug("Request query params: %s", request.query_params)
 
-    methods = ["registered", "active", "reserved", "scheduled"]
-    if status:
-        logger.debug("Filtering Requested status: %s", status)
-        methods = [method for method in methods if method in status]
+        if isinstance(status, str):
+            status = [status.upper()]
 
-    logger.debug("Requested status: %s", methods)
-    with Session(request.app.state.db_engine) as session:
-        stmt = select(TaskInfo)
+        methods = ["registered", "active", "reserved", "scheduled"]
         if status:
-            stmt = stmt.where(TaskInfo.status.in_(status))
-        stmt = stmt.order_by(sort_by)
-        stmt = stmt.offset((page - 1) * per_page)
-        stmt = stmt.limit(per_page)
-        tasks_info = session.exec(stmt).all()
-        logger.debug("Found %s number of tasks", len(tasks_info))
-        total = session.exec(select(func.count("*")).select_from(TaskInfo)).first()
+            logger.debug("Filtering Requested status: %s", status)
+            methods = [method for method in methods if method in status]
 
-    return TaskInfoResponse(
-        tasks=tasks_info,
-        count=len(tasks_info),
-        total=total,
-        total_pages=total // per_page + 1,
-    )
+        logger.debug("Requested status: %s", methods)
+        with Session(request.app.state.db_engine) as session:
+            stmt = select(TaskInfo)
+            if status:
+                stmt = stmt.where(TaskInfo.status.in_(status))
+            stmt = stmt.order_by(sort_by)
+            stmt = stmt.offset((page - 1) * per_page)
+            stmt = stmt.limit(per_page)
+            tasks_info = session.exec(stmt).all()
+            logger.debug("Found %s number of tasks", len(tasks_info))
+            total = session.exec(select(func.count("*")).select_from(TaskInfo)).first()
 
+            return TaskInfoResponse(
+                tasks=tasks_info,
+                count=len(tasks_info),
+                total=total,
+                total_pages=total // per_page + 1,
+            )
+    except Exception as e:
+        logger.error(f"Error fetching tasks: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
+
+
+@tasks_router.get("/{task_id}")
+async def get_task(request: Request, task_id: str) -> TaskInfo:
+    try:
+        with Session(request.app.state.db_engine) as session:
+            task_info = session.exec(select(TaskInfo).where(TaskInfo.id == task_id)).first()
+            logger.debug("Task info: %s", task_info)
+            if not task_info:
+                raise HTTPException(status_code=404, detail="Task not found")
+
+            return task_info
+    except Exception as e:
+        logger.error(f"Error fetching task: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
 
 @tasks_router.get("/filter")
 async def filter_tasks(request: Request) -> TaskFilterRequest:
