@@ -1,0 +1,5 @@
+fastapi==0.111.0
+sqlmodel==0.0.19
+pydantic-settings
+celery==5.4.0
+redis==5.0.7
