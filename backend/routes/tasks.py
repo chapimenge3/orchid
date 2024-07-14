@@ -42,6 +42,7 @@ class TaskFilterRequest(BaseModel):
 
 
 class TaskInvokeRequest(BaseModel):
+    task_name: str
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
 
@@ -131,10 +132,11 @@ async def get_task(request: Request, task_id: str) -> TaskInfo:
         return HTTPException(status_code=500, detail="Internal server error")
 
 
-@tasks_router.post("/invoke/{task_name}")
-async def invoke_task(task_name: str, body: TaskInvokeRequest, request: Request):
+@tasks_router.post("/invoke/")
+async def invoke_task(body: TaskInvokeRequest, request: Request):
     try:
         celery_app = request.app.state.celery_app
+        task_name = body.task_name
         logger.debug("Invoking task: %s", task_name)
         logger.debug("Task body: %s", body)
         result = celery_app.send_task(task_name, args=body.args, kwargs=body.kwargs)
@@ -142,4 +144,25 @@ async def invoke_task(task_name: str, body: TaskInvokeRequest, request: Request)
         return {"task_id": result.task_id}
     except Exception as e:
         logger.error(f"Error invoking task: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
+
+
+@tasks_router.post("/{task_id}/revoke")
+async def revoke_task(task_id: str, request: Request):
+    try:
+        celery_app = request.app.state.celery_app
+        result = celery_app.control.revoke(task_id, terminate=True)
+        logger.debug("Task result: %s", result)
+        # with Session(request.app.state.db_engine) as session:
+        #     task_info = session.exec(
+        #         select(TaskInfo).where(TaskInfo.id == task_id)
+        #     ).first()
+        #     if not task_info:
+        #         raise HTTPException(status_code=404, detail="Task not found")
+        #     task_info.status = "REVOKED"
+        #     session.add(task_info)
+        #     session.commit()
+        return {"task_id": task_id}
+    except Exception as e:
+        logger.error(f"Error revoking task: {e}", exc_info=True)
         return HTTPException(status_code=500, detail="Internal server error")

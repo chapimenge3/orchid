@@ -108,6 +108,25 @@ def write_to_db(engine):
                         total = end_time - datetime.fromisoformat(task.start_time)
                         task.runtime = str(total.total_seconds())
                     db_session.add(task)
+                elif event_type == "task-revoked":
+                    stmt = select(TaskInfo).where(TaskInfo.id == event["uuid"])
+                    task = db_session.exec(stmt).first()
+                    logger.info(f"Task found in DB: {task}")
+                    if task is None:
+                        logger.error(f"Task {event['uuid']} not found in DB")
+                        continue
+
+                    end_time = event["timestamp"]
+                    utcoffset = event["utcoffset"]
+                    tz = timezone(timedelta(hours=utcoffset))
+                    end_time = datetime.fromtimestamp(end_time, tz=tz)
+                    task.end_time = str(end_time)
+                    task.status = "REVOKED"
+                    db_session.add(task)
+                    db_session.commit()
+                else:
+                    logger.info(f"Unknown event type: <{event_type}> -> {event}")
+
                 logger.info(f"Task {event['uuid']} added to DB")
             except Exception as e:
                 error = e
