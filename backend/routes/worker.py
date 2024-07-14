@@ -78,6 +78,13 @@ class WorkerStatResponse(BaseModel):
     memdump: str
 
 
+class WorkerActionRequest(BaseModel):
+    action: str
+    worker: str = None
+    args: List[Any] = []
+    kwargs: Dict[str, Any] = {}
+
+
 @worker_router.get("/")
 async def workers(request: Request) -> List[WorkerStatResponse]:
     inspect = request.app.state.celery_inspect
@@ -151,3 +158,27 @@ async def workers(request: Request) -> List[WorkerStatResponse]:
     except Exception as e:
         logger.error(f"Unexpected error in workers endpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@worker_router.post("/action")
+async def worker_action(body: WorkerActionRequest, request: Request):
+    try:
+        action = body.action
+        worker = body.worker
+        logger.debug("Action: %s", action)
+        logger.debug("Worker: %s", worker)
+        inspect = request.app.state.celery_inspect
+        control = request.app.state.celery_control
+        if action == "purge":
+            control.purge()
+        elif action == "shutdown":
+            control.shutdown()
+        elif action == "pool_grow":
+            inspect.pool_grow(*body.args, **body.kwargs)
+        elif action == "pool_shrink":
+            inspect.pool_shrink(*body.args, **body.kwargs)
+
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Error invoking worker action: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
