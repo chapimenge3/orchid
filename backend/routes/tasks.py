@@ -1,9 +1,8 @@
-import asyncio
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from sqlmodel import select, Session, func
+from sqlmodel import Session, delete, func, select
 
 from ..logger import get_logger
 from ..models.tasks import TaskInfo
@@ -45,6 +44,14 @@ class TaskInvokeRequest(BaseModel):
     task_name: str
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
+
+
+class TaskStatResponse(BaseModel):
+    success: int
+    failure: int
+    pending: int
+    started: int
+    latest_tasks: List[TaskInfo]
 
 
 @tasks_router.get("/registered-tasks")
@@ -115,6 +122,40 @@ async def tasks(request: Request) -> TaskInfoResponse:
         return HTTPException(status_code=500, detail="Internal server error")
 
 
+@tasks_router.get("/stats")
+async def stats(request: Request):
+    try:
+        with Session(request.app.state.db_engine) as session:
+            stmt = select(TaskInfo)
+            tasks_info = session.exec(stmt).all()
+            logger.debug("Tasks info: %s", tasks_info)
+            stmt = select(
+                TaskInfo.status, func.count(TaskInfo.id).label("count")
+            ).group_by(TaskInfo.status)
+            result = session.exec(stmt).all()
+            logger.debug("Task stats: %s", result)
+            result_dict = {row.status: row.count for row in result}
+            success = result_dict.get("SUCCEEDED", 0)
+            failure = result_dict.get("FAILED", 0)
+            pending = result_dict.get("PENDING", 0)
+            started = result_dict.get("STARTED", 0)
+            latest_tasks = session.exec(
+                select(TaskInfo).order_by(TaskInfo.created_at.desc()).limit(5)
+            ).all()
+
+            return TaskStatResponse(
+                success=success,
+                failure=failure,
+                pending=pending,
+                started=started,
+                latest_tasks=latest_tasks,
+            )
+
+    except Exception as e:
+        logger.error(f"Error fetching tasks stats: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
+
+
 @tasks_router.get("/{task_id}")
 async def get_task(request: Request, task_id: str) -> TaskInfo:
     try:
@@ -129,6 +170,27 @@ async def get_task(request: Request, task_id: str) -> TaskInfo:
             return task_info
     except Exception as e:
         logger.error(f"Error fetching task: {e}", exc_info=True)
+        return HTTPException(status_code=500, detail="Internal server error")
+
+
+@tasks_router.delete("/{task_id}")
+async def delete_task(task_id: str, request: Request):
+    try:
+        with Session(request.app.state.db_engine) as session:
+            delete_stmt = delete(TaskInfo).where(TaskInfo.id == task_id)
+            res = session.exec(delete_stmt)
+            logger.debug("Available methods of res object: %s", dir(res))
+            logger.debug("Deleted task: %s", res.rowcount)
+            if res.rowcount == 0:
+                return HTTPException(status_code=404, detail="Task not found")
+            session.commit()
+
+        return {
+            "status": "ok",
+            "message": f"Task {task_id} deleted successfully",
+        }
+    except Exception as e:
+        logger.error(f"Error revoking task: {e}", exc_info=True)
         return HTTPException(status_code=500, detail="Internal server error")
 
 
