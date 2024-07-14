@@ -1,8 +1,12 @@
 # Orchid
 
+
 Orchid is a advanced Celery monitoring and management tool with modern UI and customizable features.
 
 THIS PROJECT IS ACTIVELY IN DEVELOPMENT. DON'T USE IT IN PRODUCTION.
+
+![Orchid Logo](./logo-color.png)
+
 
 ## Features
 
