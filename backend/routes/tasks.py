@@ -76,7 +76,7 @@ async def tasks(request: Request) -> TaskInfoResponse:
     try:
         # workers_details = request.app.state.celery_inspect.registered_tasks()
         status = request.query_params.get("status")
-        sort_by = request.query_params.get("sort_by", "created_at")
+        sort_by = request.query_params.get("sort_by", "-end_time")
         page = int(request.query_params.get("page", 1))
         page_size = int(request.query_params.get("page_size", 10))
         task_name = request.query_params.get("task_name")
@@ -84,20 +84,25 @@ async def tasks(request: Request) -> TaskInfoResponse:
         sort_stmt = []
 
         try:
-            logger.debug("Requested sort_by: %s", sort_by)
             if "&" in sort_by:
                 sort_by = sort_by.split("&")
+            else:
+                sort_by = [sort_by]
 
+            logger.debug("Requested sort_by: %s", sort_by)
             for field in sort_by:
                 try:
                     if field.startswith("-"):
                         sort_stmt.append(getattr(TaskInfo, field[1:]).desc())
                     else:
                         sort_stmt.append(getattr(TaskInfo, field))
-                except AttributeError:
+                except AttributeError as e:
+                    logger.error(f"Error sorting by field: {field}", exc_info=True)
                     pass
+            
         except AttributeError:
-            sort_by = -TaskInfo.created_at
+            sort_by = Task.end_time.desc()
+            sort_stmt.append(sort_by)
 
         logger.debug("Workers details: %s", status)
         logger.debug("Request query params: %s", request.query_params)

@@ -35,6 +35,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Task } from "@/lib/types"
 
+
+import InvokeTask from "./invoke-task";
+
 export type TasksResponse = {
     tasks: Task[]
     total: number,
@@ -71,11 +74,14 @@ export default function TasksTable() {
         }
     })
 
-    console.log("Sorting:", sorting)
-
     return (
         <div>
-            <h1 className="m-5">Task List</h1>
+            <div className="flex justify-between">
+                <h1 className="m-5">Task List</h1>
+                <div className="m-5">
+                    <InvokeTask/>
+                </div>
+            </div>
             <div className="container-fluid mx-auto p-4">
                 <div className="rounded-md border">
                     <Table>
