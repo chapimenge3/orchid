@@ -77,14 +77,25 @@ async def tasks(request: Request) -> TaskInfoResponse:
         # workers_details = request.app.state.celery_inspect.registered_tasks()
         status = request.query_params.get("status")
         sort_by = request.query_params.get("sort_by", "created_at")
-        sort_order = request.query_params.get("sort_order", "desc")
         page = int(request.query_params.get("page", 1))
-        per_page = int(request.query_params.get("per_page", 10))
+        page_size = int(request.query_params.get("page_size", 10))
+        task_name = request.query_params.get("task_name")
+
+        sort_stmt = []
 
         try:
-            sort_by = getattr(TaskInfo, sort_by)
-            if sort_order == "desc":
-                sort_by = -sort_by
+            logger.debug("Requested sort_by: %s", sort_by)
+            if "&" in sort_by:
+                sort_by = sort_by.split("&")
+
+            for field in sort_by:
+                try:
+                    if field.startswith("-"):
+                        sort_stmt.append(getattr(TaskInfo, field[1:]).desc())
+                    else:
+                        sort_stmt.append(getattr(TaskInfo, field))
+                except AttributeError:
+                    pass
         except AttributeError:
             sort_by = -TaskInfo.created_at
 
@@ -104,9 +115,13 @@ async def tasks(request: Request) -> TaskInfoResponse:
             stmt = select(TaskInfo)
             if status:
                 stmt = stmt.where(TaskInfo.status.in_(status))
-            stmt = stmt.order_by(sort_by)
-            stmt = stmt.offset((page - 1) * per_page)
-            stmt = stmt.limit(per_page)
+            if task_name:
+                stmt = stmt.where(TaskInfo.task_name == task_name)
+            # stmt = stmt.order_by(sort_by)
+            if sort_stmt:
+                stmt = stmt.order_by(*sort_stmt)
+            stmt = stmt.offset((page - 1) * page_size)
+            stmt = stmt.limit(page_size)
             tasks_info = session.exec(stmt).all()
             logger.debug("Found %s number of tasks", len(tasks_info))
             total = session.exec(select(func.count("*")).select_from(TaskInfo)).first()
@@ -115,7 +130,7 @@ async def tasks(request: Request) -> TaskInfoResponse:
                 tasks=tasks_info,
                 count=len(tasks_info),
                 total=total,
-                total_pages=total // per_page + 1,
+                total_pages=total // page_size + 1,
             )
     except Exception as e:
         logger.error(f"Error fetching tasks: {e}", exc_info=True)
@@ -194,7 +209,7 @@ async def delete_task(task_id: str, request: Request):
         return HTTPException(status_code=500, detail="Internal server error")
 
 
-@tasks_router.post("/invoke/")
+@tasks_router.post("/invoke")
 async def invoke_task(body: TaskInvokeRequest, request: Request):
     try:
         celery_app = request.app.state.celery_app
