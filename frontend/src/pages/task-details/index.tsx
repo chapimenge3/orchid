@@ -3,7 +3,22 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Task } from "@/lib/types"
 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/components/ui/use-toast"
+import { Link } from "@tanstack/react-router"
+
 export default function TaskDetails({ task }: { task?: Task }) {
+    const { toast } = useToast()
 
     if (!task) {
         return <div>Task not found</div>
@@ -43,7 +58,66 @@ export default function TaskDetails({ task }: { task?: Task }) {
     }
 
     const traceback = task.traceback //?.replace('\n', '<br />')
-    // console.log("Traceback:", traceback)
+    console.log("Args:", task.args)
+
+    const retryTask = async () => {
+        console.log("Retrying task:", task.id)
+        let args: string | string[] = task.args || ''
+        let kwargs = task.kwargs
+        if (typeof args === 'string' && args.startsWith('(') && args.endsWith(')')) {
+            args = args.substring(1, args.length - 1).split(',')
+        }
+        if (typeof kwargs === 'string' && kwargs.startsWith('{') && kwargs.endsWith('}')) {
+            kwargs = JSON.parse(kwargs)
+        }
+        const body = {
+            task_name: task.name,
+            args: args,
+            kwargs: kwargs,
+        }
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/tasks/invoke`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            })
+            const data = await response.json()
+            if (response.status === 200) {
+                console.log("Data:", data)
+                toast({
+                    title: 'Task Retry Successful',
+                    description: 'Task successfully retried.',
+                    action: (
+                        <Link to={`/tasks/${data.task_id}`}>
+                            <Button variant="outline" className="ml-2">
+                                View Task
+                            </Button>
+                        </Link>
+                    ),
+                    duration: 3000,
+                })
+            } else {
+                console.error("Data:", data)
+                toast({
+                    title: 'Task Retry Failed',
+                    description: 'Task retry failed.',
+                    variant: "destructive",
+                    duration: 3000,
+                })
+            }
+        } catch (error) {
+            console.error('Error fetching task:', error);
+            toast({
+                title: 'Task Retry Failed',
+                description: 'Task retry failed.',
+                variant: "destructive",
+                duration: 3000,
+            })
+        }
+
+    }
 
 
     return (
@@ -54,7 +128,23 @@ export default function TaskDetails({ task }: { task?: Task }) {
                     <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Task details and status.</p>
                 </div>
                 <div className="">
-                    <Button className="mr-1">Retry</Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger>
+                            <Button className="mr-1">Retry</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure you want to retry this task?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action will create a new task with the same arguments and kwargs.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="text-red-500 hover:text-red-700">Cancel</AlertDialogCancel>
+                                <AlertDialogAction className="text-green-500" onClick={retryTask}>Retry Task</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                     <Button variant='destructive' >Delete</Button>
                 </div>
             </div>

@@ -6,7 +6,6 @@ import {
   DatabaseZap,
   HeartPulse
 } from "lucide-react"
-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/table"
 import { Task, WorkerStatResponse } from '@/lib/types'
 import { useEffect, useState } from "react"
+import { Link } from "@tanstack/react-router"
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -147,10 +147,10 @@ export default function App() {
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
-              <a href="#">
+              <Link to="/tasks">
                 View All
                 <ArrowUpRight className="h-4 w-4" />
-              </a>
+              </Link>
             </Button>
           </CardHeader>
           <CardContent>
@@ -169,18 +169,25 @@ export default function App() {
                   tasks.map((task: Task) => (
                     <TableRow key={task.id}>
                       <TableCell>
-                        <div className="font-medium">{task.name}</div>
-                        <div className="hidden text-sm text-muted-foreground md:inline">
-                          {task.hostname}
-                        </div>
+                        <Link to={`/tasks/${task.id}`} className="cursor-pointer">
+                          <div className="font-medium">
+                            {task.name}</div>
+                          <div className="hidden text-sm text-muted-foreground md:inline">
+                            {task.hostname}
+                          </div>
+                        </Link>
                       </TableCell>
                       <TableCell className="">
-                        {getBadge(task.status)}
+                        <Link to={`/tasks/${task.id}`} className="cursor-pointer">
+                          {getBadge(task.status)}
+                        </Link>
                       </TableCell>
                       <TableCell className="text-right">
-                        {
-                          task.runtime ? parseFloat(task.runtime).toFixed(2) : '0.00'
-                        }
+                        <Link to={`/tasks/${task.id}`} className="cursor-pointer">
+                          {
+                            task.runtime ? parseFloat(task.runtime).toFixed(2) : '0.00'
+                          }
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))

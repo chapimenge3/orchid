@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Task } from "@/lib/types"
+import { ArrowUp, ArrowDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export const columns: ColumnDef<Task>[] = [
     {
@@ -9,7 +11,7 @@ export const columns: ColumnDef<Task>[] = [
         header: 'Task ID',
         cell: ({ row }) => {
             return (
-                <Link to={`/task-details/${row.original.id}`} className="text-blue-600 hover:text-blue-800">
+                <Link to={`/tasks/${row.original.id}`} className="text-blue-600 hover:text-blue-800">
                     {row.original.id}
                 </Link>
             );
@@ -17,7 +19,25 @@ export const columns: ColumnDef<Task>[] = [
     },
     {
         accessorKey: 'name',
-        header: 'Name',
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        console.log("Sorting column: ", column.id, column.getIsSorted())
+                        return column.toggleSorting(column.getIsSorted() === "asc")
+                    }}
+                >
+                    Name
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-4 w-4" />
+                    }
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "desc" && <ArrowDown className="ml-2 h-4 w-4" />
+                    }
+                </Button>
+            )
+        },
     },
     {
         accessorKey: 'hostname',
@@ -25,22 +45,84 @@ export const columns: ColumnDef<Task>[] = [
     },
     {
         accessorKey: 'submitted_time',
-        header: 'Submitted Time',
+        // header: 'Submitted Time',
+        header: ({ column }) => {
+            // check if there is sorting on this column
+            console.log("Column:",)
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        console.log("Sorting column: ", column.id, column.getIsSorted())
+                        return column.toggleSorting(column.getIsSorted() === "asc")
+                    }}
+                >
+                    Submitted Time
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-4 w-4" />
+                    }
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "desc" && <ArrowDown className="ml-2 h-4 w-4" />
+                    }
+                </Button>
+            )
+        },
     },
     {
         accessorKey: 'start_time',
-        header: 'Start Time',
+        // header: 'Start Time',
+        header: ({ column }) => {
+            // check if there is sorting on this column
+            console.log("Column:",)
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        console.log("Sorting column: ", column.id, column.getIsSorted())
+                        return column.toggleSorting(column.getIsSorted() === "asc")
+                    }}
+                >
+                    Start Time
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-4 w-4" />
+                    }
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "desc" && <ArrowDown className="ml-2 h-4 w-4" />
+                    }
+                </Button>
+            )
+        }
     },
     {
         accessorKey: 'end_time',
-        header: 'End Time',
+        // header: 'End Time',
+        header: ({ column }) => {
+            // check if there is sorting on this column
+            console.log("Column:",)
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        console.log("Sorting column: ", column.id, column.getIsSorted())
+                        return column.toggleSorting(column.getIsSorted() === "asc")
+                    }}
+                >
+                    End Time
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-4 w-4" />
+                    }
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "desc" && <ArrowDown className="ml-2 h-4 w-4" />
+                    }
+                </Button>
+            )
+        }
     },
     {
         accessorKey: 'runtime',
         header: 'Runtime',
         cell: ({ row }) => {
             const runtimeValue = row.original.runtime
-            // if runtime is not null, change it to number and round it to 2 decimal places
             const runtime = runtimeValue ? parseFloat(runtimeValue).toFixed(2) : '0.00'
 
             return (
@@ -56,7 +138,6 @@ export const columns: ColumnDef<Task>[] = [
         header: 'Status',
         cell: ({ row }) => {
             const status = row.original.status
-            console.log("Status:", status)
             if (status === 'PENDING') {
                 return (
                     <Badge variant="outline" className="text-xs">

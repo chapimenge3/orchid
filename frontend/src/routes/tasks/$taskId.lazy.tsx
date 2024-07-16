@@ -4,7 +4,7 @@ import { Task } from '@/lib/types'
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
-export const Route = createLazyFileRoute('/task-details/$taskId')({
+export const Route = createLazyFileRoute('/tasks/$taskId')({
     component: TasksPage,
 })
 
@@ -30,7 +30,7 @@ function TasksPage() {
     }, [taskId])
 
     return <div className="flex min-h-screen w-full flex-col">
-        <Navbar pathname={`/task-details/${taskId}`} />
+        <Navbar pathname={`/tasks/${taskId}`} />
         <TaskDetails task={task} />
     </div>
 }   
