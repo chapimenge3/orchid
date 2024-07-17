@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/components/ui/use-toast"
 import { Link } from "@tanstack/react-router"
+import { revokeTask } from "@/lib/fetcher"
 
 export default function TaskDetails({ task }: { task?: Task }) {
     const { toast } = useToast()
@@ -49,7 +50,7 @@ export default function TaskDetails({ task }: { task?: Task }) {
                 {status}
             </Badge>
         )
-    } else if (status === 'FAILED') {
+    } else if (status === 'FAILED' || status === 'REVOKED') {
         statusComponent = (
             <Badge variant="destructive" className="text-xs">
                 {status}
@@ -58,8 +59,8 @@ export default function TaskDetails({ task }: { task?: Task }) {
     }
 
     const traceback = task.traceback //?.replace('\n', '<br />')
-    console.log("Args:", task.args)
 
+    // TODO: args is not working properly
     const retryTask = async () => {
         console.log("Retrying task:", task.id)
         let args: string | string[] = task.args || ''
@@ -119,6 +120,28 @@ export default function TaskDetails({ task }: { task?: Task }) {
 
     }
 
+    const handleRevokeTask = async () => {
+        console.log("Revoking task:", task.id)
+        try {
+            revokeTask(task.id)
+            toast({
+                title: 'Task Revoke Successful',
+                description: 'Task successfully revoked.',
+                duration: 3000,
+            })
+
+        } catch (error) {
+            console.error('Error fetching task:', error);
+            toast({
+                title: 'Task Revoke Failed',
+                description: 'Task revoke failed.',
+                variant: "destructive",
+                duration: 3000,
+            })
+        }
+
+    }
+
 
     return (
         <div className="container mx-auto py-10">
@@ -128,7 +151,7 @@ export default function TaskDetails({ task }: { task?: Task }) {
                     <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Task details and status.</p>
                 </div>
                 <div className="">
-                    <AlertDialog>
+                    <AlertDialog key="retry">
                         <AlertDialogTrigger>
                             <Button className="mr-1">Retry</Button>
                         </AlertDialogTrigger>
@@ -145,7 +168,26 @@ export default function TaskDetails({ task }: { task?: Task }) {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <Button variant='destructive' >Delete</Button>
+                    {
+                        task.status === 'PENDING' || task.status === 'STARTED' &&
+                        (<AlertDialog key="revoke">
+                            <AlertDialogTrigger>
+                                <Button variant="destructive" className="mr-1">Revoke</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure you want to <b className="text-red-600">REVOKE</b> this task?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action will terminate the task and remove it from the queue.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-red-500" onClick={handleRevokeTask}>Revoke</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>)
+                    }
                 </div>
             </div>
 

@@ -9,10 +9,10 @@
 - [ ] Queue length and task throughput metrics
 
 ### Task Management
-- [ ] View all tasks (pending, active, scheduled, succeeded, failed)
-- [ ] Detailed task information (arguments, results, runtime, etc.)
-- [ ] ability to invoke tasks
-- [ ] Revoke, terminate, and retry tasks
+- [x] View all tasks (pending, active, scheduled, succeeded, failed)
+- [x] Detailed task information (arguments, results, runtime, etc.)
+- [x] ability to invoke tasks
+- [x] Revoke, terminate, and retry tasks
 - [ ] Task prioritization and queue management
 
 ### Worker Management

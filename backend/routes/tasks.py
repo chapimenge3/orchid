@@ -99,7 +99,7 @@ async def tasks(request: Request) -> TaskInfoResponse:
                 except AttributeError as e:
                     logger.error(f"Error sorting by field: {field}", exc_info=True)
                     pass
-            
+
         except AttributeError:
             sort_by = Task.end_time.desc()
             sort_stmt.append(sort_by)
@@ -235,15 +235,6 @@ async def revoke_task(task_id: str, request: Request):
         celery_app = request.app.state.celery_app
         result = celery_app.control.revoke(task_id, terminate=True)
         logger.debug("Task result: %s", result)
-        # with Session(request.app.state.db_engine) as session:
-        #     task_info = session.exec(
-        #         select(TaskInfo).where(TaskInfo.id == task_id)
-        #     ).first()
-        #     if not task_info:
-        #         raise HTTPException(status_code=404, detail="Task not found")
-        #     task_info.status = "REVOKED"
-        #     session.add(task_info)
-        #     session.commit()
         return {"task_id": task_id}
     except Exception as e:
         logger.error(f"Error revoking task: {e}", exc_info=True)

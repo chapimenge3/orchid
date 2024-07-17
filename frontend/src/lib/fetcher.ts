@@ -48,3 +48,20 @@ export async function invokeTask(taskName: string, payload: string) {
         throw error;
     }
 }
+
+export async function revokeTask(taskId: string) {
+    try {
+        const response = await fetch(`${BASE_URL}/api/v1/tasks/${taskId}/revoke/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        // Handle error
+        console.error(error);
+        throw error;
+    }
+}
