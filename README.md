@@ -15,15 +15,25 @@ THIS PROJECT IS ACTIVELY IN DEVELOPMENT. DON'T USE IT IN PRODUCTION.
 
 ### Some Screenshots:
 
-![Dashboard](./demo-images/screen-shot-home.png)
+Dashboard 
 
-![Tasks](./demo-images/screenshot-tasks.png)
+![Orchid Dashboard](./screen-shot-home.png)
 
-![Tasks](./demo-images/screenshot-task-details.png)
+Task List
+![Task List](./task-list.png)
 
-![Task Details](./demo-images/error-task-details.png)
+Invoke Task
+![invoke task](./invoke-task-choice.png)
+
+![invoke task](./invoke-task-args.png)
+
+![invoke task](./invoke-task-toast.png)
 
 
+Task Details
+![Task Details](./screenshot-task-details.png)
+
+![Task Details](./error-task-details.png)
 More information will be added soon.
 
 ## Contributing
