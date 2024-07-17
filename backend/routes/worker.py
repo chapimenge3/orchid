@@ -1,8 +1,10 @@
+import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List
 
 from celery.exceptions import CeleryError
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, WebSocket
+from fastapi.websockets import WebSocketDisconnect
 from pydantic import BaseModel
 
 from ..logger import get_logger
@@ -182,3 +184,37 @@ async def worker_action(body: WorkerActionRequest, request: Request):
     except Exception as e:
         logger.error(f"Error invoking worker action: {e}", exc_info=True)
         return HTTPException(status_code=500, detail="Internal server error")
+
+
+@worker_router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    try:
+        from ..lifespan import MONITORING_APP as monitor  # noqa
+        from queue import Queue  # noqa
+
+        await websocket.accept()
+
+        heart_beat = {}
+        event_queue = Queue()
+        monitor.register_event("worker-heartbeat", event_queue.put, 2)
+
+        while True:
+            try:
+                if not event_queue.empty():
+                    data = event_queue.get(block=False)
+                    heart_beat[data["hostname"]] = data
+                    await websocket.send_json(heart_beat)
+                    event_queue.task_done()
+
+                await asyncio.sleep(1)
+            except WebSocketDisconnect:
+                logger.info("Client disconnected")
+                break
+            except RuntimeError as e:
+                logger.error(f"RuntimeError in /workers/ws: {e}")
+                break
+            except Exception as e:
+                logger.error(f"Error in websocket endpoint: {e}", exc_info=True)
+
+    except Exception as e:
+        logger.error(f"Error in websocket endpoint: {e}")

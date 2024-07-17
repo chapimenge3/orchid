@@ -17,6 +17,22 @@ class Settings(BaseSettings):
 
     @property
     def DB_URL(self):
+        # if self.DB_ENGINE == "postgresql":
+        #     return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        # elif self.DB_ENGINE == "sqlite":
+        #     return f"sqlite:///{self.DB_NAME}"
+        # else:
+        #     raise ValueError(f"Invalid DB engine: {self.DB_ENGINE}")
+        # generate async db url
+        if self.DB_ENGINE == "postgresql":
+            return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        elif self.DB_ENGINE == "sqlite":
+            return f"sqlite+aiosqlite:///{self.DB_NAME}"
+        else:
+            raise ValueError(f"Invalid DB engine: {self.DB_ENGINE}")
+    
+    @property
+    def DB_SYNC_URL(self):
         if self.DB_ENGINE == "postgresql":
             return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         elif self.DB_ENGINE == "sqlite":

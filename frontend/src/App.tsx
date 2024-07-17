@@ -1,3 +1,4 @@
+import useSWRSubscription from 'swr/subscription'
 import {
   ArrowUpRight,
   Workflow,
@@ -23,9 +24,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Task, WorkerStatResponse } from '@/lib/types'
+import { Task, WorkerHeartbeat } from '@/lib/types'
 import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
+
+
+// export type HeartBeat = {
+//   hostname?: string
+//   workerHeartBeat?: WorkerHeartbeat
+// }
+
+// define dictionary that will hold the worker heartbeat data for each worker
+// key as hostname and value as WorkerHeartbeat
+
+type HeartBeat = {
+  [key: string]: WorkerHeartbeat
+}
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -33,7 +47,22 @@ export default function App() {
   const [failure, setFailure] = useState(0)
   const [pending, setPending] = useState(0)
   const [started, setStarted] = useState(0)
-  const [workers, setWorkers] = useState<WorkerStatResponse[]>([])
+  const [heartbeat, setHeartBeat] = useState<HeartBeat>({})
+
+  const { data, error } = useSWRSubscription('http://localhost:8000/api/v1/workers/ws', (key, { next }) => {
+    const socket = new WebSocket(key)
+    socket.addEventListener('message', (event) => {
+      const data = JSON.parse(event.data)
+      if (data) {
+        setHeartBeat(data)
+      }
+      next(null, event.data)
+    })
+    return () => socket.close()
+  })
+
+  console.log("WS: Worker Data:", data)
+  console.log("WS: Worker error:", error)
 
   useEffect(() => {
     fetch('http://localhost:8000/api/v1/tasks/stats')
@@ -50,16 +79,16 @@ export default function App() {
         console.error('Error fetching tasks:', error);
       });
 
-    // TODO: Convert to Promise.all
-    fetch('http://localhost:8000/api/v1/workers')
-      .then(response => response.json())
-      .then(data => {
-        console.log("Workers:", data)
-        setWorkers(data)
-      })
-      .catch(error => {
-        console.error('Error fetching workers:', error);
-      });
+    // // TODO: Convert to Promise.all
+    // fetch('http://localhost:8000/api/v1/workers')
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     console.log("Workers:", data)
+    //     setWorkers(data)
+    //   })
+    //   .catch(error => {
+    //     console.error('Error fetching workers:', error);
+    //   });
   }, []);
 
   const getBadge = (status?: string) => {
@@ -203,31 +232,26 @@ export default function App() {
           </CardHeader>
           <CardContent className="grid gap-8">
             {
-              workers.map((worker: WorkerStatResponse) => (
-                <div key={worker.name} className="flex items-center gap-4">
+              Object.keys(heartbeat).map((worker: string) => (
+                <div key={worker} className="flex items-center gap-4">
                   <HeartPulse className="h-4 w-4 text-green-400 animate-bounce" />
                   <div className="grid gap-1">
                     <p className="text-sm font-medium leading-none">
-                      {worker.name}
+                      {worker}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {
-                        `Registered tasks: ${worker.tasks.length}`
-                      }
+                      Running {heartbeat[worker].active} tasks
                     </p>
                   </div>
                   <div className="ml-auto font-medium">
-                    {
-                      worker.broker.hostname
-                    } {' Broker'}
+                    Processed Task: {heartbeat[worker].processed}
                   </div>
                 </div>
               ))
             }
-
           </CardContent>
         </Card>
       </div>
-    </main>
+    </main >
   )
 }

@@ -18,6 +18,7 @@ import { Route as rootRoute } from './routes/__root'
 
 const AboutLazyImport = createFileRoute('/about')()
 const IndexLazyImport = createFileRoute('/')()
+const WorkersIndexLazyImport = createFileRoute('/workers/')()
 const TasksIndexLazyImport = createFileRoute('/tasks/')()
 const TasksTaskIdLazyImport = createFileRoute('/tasks/$taskId')()
 
@@ -32,6 +33,11 @@ const IndexLazyRoute = IndexLazyImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
+
+const WorkersIndexLazyRoute = WorkersIndexLazyImport.update({
+  path: '/workers/',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/workers/index.lazy').then((d) => d.Route))
 
 const TasksIndexLazyRoute = TasksIndexLazyImport.update({
   path: '/tasks/',
@@ -75,6 +81,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksIndexLazyImport
       parentRoute: typeof rootRoute
     }
+    '/workers/': {
+      id: '/workers/'
+      path: '/workers'
+      fullPath: '/workers'
+      preLoaderRoute: typeof WorkersIndexLazyImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -85,6 +98,7 @@ export const routeTree = rootRoute.addChildren({
   AboutLazyRoute,
   TasksTaskIdLazyRoute,
   TasksIndexLazyRoute,
+  WorkersIndexLazyRoute,
 })
 
 /* prettier-ignore-end */
@@ -98,7 +112,8 @@ export const routeTree = rootRoute.addChildren({
         "/",
         "/about",
         "/tasks/$taskId",
-        "/tasks/"
+        "/tasks/",
+        "/workers/"
       ]
     },
     "/": {
@@ -112,6 +127,9 @@ export const routeTree = rootRoute.addChildren({
     },
     "/tasks/": {
       "filePath": "tasks/index.lazy.tsx"
+    },
+    "/workers/": {
+      "filePath": "workers/index.lazy.tsx"
     }
   }
 }

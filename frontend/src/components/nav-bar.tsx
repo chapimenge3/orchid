@@ -31,7 +31,7 @@ const navLinks = [
     },
     {
         name: "Workers",
-        href: "#",
+        href: "/workers",
         icon: Package2,
     },
     {
@@ -70,49 +70,6 @@ export default function Navbar(
                     {/* TODO: Add logo */}
                     <span className="sr-only">Orchid</span>
                 </a>
-                {/* 
-                <a
-                    href="#"
-                    className="text-foreground transition-colors hover:text-foreground"
-                >
-                    Dashboard
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Tasks
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Workers
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Brokers
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Controls
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Analytics
-                </a>
-                <a
-                    href="#"
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                    Users
-                </a> */}
                 {
                     navLinks.map((link, index) => (
                         <Link
