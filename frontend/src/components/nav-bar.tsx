@@ -47,7 +47,7 @@ const navLinks = [
     },
     {
         name: "Analytics",
-        href: "#",
+        href: "/analytics",
         icon: Package2,
     },
     {

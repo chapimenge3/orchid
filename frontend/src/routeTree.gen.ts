@@ -16,6 +16,8 @@ import { Route as rootRoute } from './routes/__root'
 
 // Create Virtual Routes
 
+const TestLazyImport = createFileRoute('/test')()
+const AnalyticsLazyImport = createFileRoute('/analytics')()
 const AboutLazyImport = createFileRoute('/about')()
 const IndexLazyImport = createFileRoute('/')()
 const WorkersIndexLazyImport = createFileRoute('/workers/')()
@@ -23,6 +25,16 @@ const TasksIndexLazyImport = createFileRoute('/tasks/')()
 const TasksTaskIdLazyImport = createFileRoute('/tasks/$taskId')()
 
 // Create/Update Routes
+
+const TestLazyRoute = TestLazyImport.update({
+  path: '/test',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/test.lazy').then((d) => d.Route))
+
+const AnalyticsLazyRoute = AnalyticsLazyImport.update({
+  path: '/analytics',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() => import('./routes/analytics.lazy').then((d) => d.Route))
 
 const AboutLazyRoute = AboutLazyImport.update({
   path: '/about',
@@ -67,6 +79,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutLazyImport
       parentRoute: typeof rootRoute
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsLazyImport
+      parentRoute: typeof rootRoute
+    }
+    '/test': {
+      id: '/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof TestLazyImport
+      parentRoute: typeof rootRoute
+    }
     '/tasks/$taskId': {
       id: '/tasks/$taskId'
       path: '/tasks/$taskId'
@@ -96,6 +122,8 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren({
   IndexLazyRoute,
   AboutLazyRoute,
+  AnalyticsLazyRoute,
+  TestLazyRoute,
   TasksTaskIdLazyRoute,
   TasksIndexLazyRoute,
   WorkersIndexLazyRoute,
@@ -111,6 +139,8 @@ export const routeTree = rootRoute.addChildren({
       "children": [
         "/",
         "/about",
+        "/analytics",
+        "/test",
         "/tasks/$taskId",
         "/tasks/",
         "/workers/"
@@ -121,6 +151,12 @@ export const routeTree = rootRoute.addChildren({
     },
     "/about": {
       "filePath": "about.lazy.tsx"
+    },
+    "/analytics": {
+      "filePath": "analytics.lazy.tsx"
+    },
+    "/test": {
+      "filePath": "test.lazy.tsx"
     },
     "/tasks/$taskId": {
       "filePath": "tasks/$taskId.lazy.tsx"

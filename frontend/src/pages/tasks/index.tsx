@@ -79,7 +79,7 @@ export default function TasksTable() {
             <div className="flex justify-between">
                 <h1 className="m-5">Task List</h1>
                 <div className="m-5">
-                    <InvokeTask/>
+                    <InvokeTask />
                 </div>
             </div>
             <div className="container-fluid mx-auto p-4">
@@ -123,7 +123,7 @@ export default function TasksTable() {
                                     </TableRow>
                                 )
                             }
-                            {data?.count && (
+                            {data?.count > 0 && (
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
@@ -137,6 +137,15 @@ export default function TasksTable() {
                                     </TableRow>
                                 ))
                             )}
+                            {
+                                data?.count === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={columns.length} className="h-24 text-center">
+                                            No data available
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            }
                         </TableBody>
                     </Table>
                 </div>

@@ -120,7 +120,6 @@ export const columns: ColumnDef<Task>[] = [
     },
     {
         accessorKey: 'runtime',
-        header: 'Runtime',
         cell: ({ row }) => {
             const runtimeValue = row.original.runtime
             const runtime = runtimeValue ? parseFloat(runtimeValue).toFixed(2) : '0.00'
@@ -131,6 +130,27 @@ export const columns: ColumnDef<Task>[] = [
                 </div>
             )
         },
+        header: ({ column }) => {
+            // check if there is sorting on this column
+            console.log("Column:",)
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                        console.log("Sorting column: ", column.id, column.getIsSorted())
+                        return column.toggleSorting(column.getIsSorted() === "asc")
+                    }}
+                >
+                    Runtime
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "asc" && <ArrowUp className="ml-2 h-4 w-4" />
+                    }
+                    {
+                        column.getIsSorted() && column.getIsSorted() === "desc" && <ArrowDown className="ml-2 h-4 w-4" />
+                    }
+                </Button>
+            )
+        }
     },
 
     {

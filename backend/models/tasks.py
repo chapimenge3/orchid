@@ -15,7 +15,7 @@ class TaskInfo(SQLModel, table=True):
     submitted_time: str | None
     start_time: str | None
     end_time: str | None
-    runtime: str | None
+    runtime: float | None
     result: str | None = Field(default=None, sa_column=TEXT)
     exception: str | None = Field(default=None, sa_column=TEXT)
     traceback: str | None = Field(default=None, sa_column=TEXT)

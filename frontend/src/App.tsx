@@ -222,6 +222,16 @@ export default function App() {
                   ))
                 }
 
+                {
+                  tasks.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-24 text-center">
+                        No data available.
+                      </TableCell>
+                    </TableRow>
+                  )
+                }
+
               </TableBody>
             </Table>
           </CardContent>

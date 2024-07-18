@@ -3,7 +3,7 @@
 ## Core Features
 
 ### Real-time Monitoring
-- [ ] Dashboard with real-time updates of task and worker status
+- [x] Dashboard with real-time updates of task and worker status
 - [ ] Graphical representation of task execution times
 - [ ] Worker status and resource utilization graphs
 - [ ] Queue length and task throughput metrics
@@ -16,7 +16,7 @@
 - [ ] Task prioritization and queue management
 
 ### Worker Management
-- [ ] List all workers with their status and capabilities
+- [x] List all workers with their status and capabilities
 - [ ] Start, stop, and restart workers
 - [ ] Adjust worker pool size and concurrency settings
 - [ ] Worker-specific task routing
