@@ -66,11 +66,19 @@ export function Workers() {
                                     < TableCell > {heartbeat[key].active} </TableCell>
                                     < TableCell > {heartbeat[key].processed} </TableCell>
                                     < TableCell className="" > {
-                                        // new Date(heartbeat[key].timestamp
                                         new Date(heartbeat[key].timestamp * 1000).toLocaleTimeString()
                                     } </TableCell>
                                 </TableRow>
                             ))
+                        }
+                        {
+                            !heartbeat && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        No data available
+                                    </TableCell>
+                                </TableRow>
+                            )
                         }
                     </TableBody>
                     < TableFooter >

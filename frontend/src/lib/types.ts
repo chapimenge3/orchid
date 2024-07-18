@@ -93,9 +93,6 @@ export type WorkerStatResponse = {
     memdump: string
 }
 
-
-// {"hostname":"celery@ebe253b9b8c2","utcoffset":0,"pid":1,"clock":8675,"freq":2.0,"active":0,"processed":5,"loadavg":[0.28,0.32,0.3],"sw_ident":"py-celery","sw_ver":"5.4.0","sw_sys":"Linux","timestamp":1721219111.4356863,"type":"worker-heartbeat","local_received":1721219111.4375706}
-
 export type WorkerHeartbeat = {
     hostname: string
     utcoffset: number
